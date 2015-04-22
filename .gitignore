@@ -1,7 +1,9 @@
 bin
-target
-*.log
 *.swp
-dependency-reduced-pom.xml
 *~
-core/nb-configuration.xml
+.idea
+Include
+Lib
+Scripts
+*.iml
+*.pyc
