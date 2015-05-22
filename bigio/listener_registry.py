@@ -1,16 +1,20 @@
 __author__ = 'atrimble'
 
+import logging
 from threading import Timer
 from bigio.reactor import Reactor
-from bigio.member.registration import Registration
+import bigio.util.utils as utils
+
+logger = logging.getLogger(__name__)
 
 
 class ListenerRegistry:
 
-    def __init__(self, member):
+    def __init__(self, member, member_holder):
         self.reactor = Reactor()
         self.interceptors = dict()
         self.me = member
+        self.member_holder = member_holder
         self.map = dict()
 
     def add_interceptor(self, topic, interceptor):
@@ -19,54 +23,34 @@ class ListenerRegistry:
 
         self.interceptors[topic].append(interceptor)
 
-    def add_local_listener(self, topic, partition, listener):
+    def add_local_listener(self, topic, listener):
         self.reactor.on(topic, listener)
 
     def register_member_for_topic(self, topic, member):
-        key = member.ip + ':' + member.gossip_port + ':' + member.data_port
+        key = utils.get_key(member)
 
         if key not in self.map:
-            self.map[key] = {}
+            self.map[key] = []
 
         if topic not in self.map[key]:
-            self.map[key][topic] = []
-
-        found = False
-        for reg in self.map[key][topic]:
-            if topic == reg.topic and member == reg.member:
-                found = True
-                break
-
-        if not found:
-            reg = Registration()
-            reg.member = member
-            reg.topic = topic
-            self.map[key][topic].append(reg)
+            self.map[key].append(topic)
 
     def get_all_registrations(self):
-        ret = []
-        for key in self.map:
-            for topic in self.map[key]:
-                for reg in self.map[key][topic]:
-                    ret.append(reg)
-        return ret
-
+        return self.map
 
     def get_registered_members(self, topic):
         ret = []
 
         for key in self.map:
             if topic in self.map[key]:
-                for reg in self.map[key][topic]:
-                    ret.append(reg.member)
+                ret.append(self.member_holder.get_member(key))
 
         return ret
 
-    def remove_registrations(self, regs):
-        for key in self.map:
-            for reg in self.map[key]:
-                if reg in regs:
-                    self.map[key].pop(reg)
+    def remove_registration(self, member, topic):
+        key = utils.get_key(member)
+        if topic in self.map[key]:
+            self.map[key].remove(topic)
 
     def send(self, envelope):
         if envelope.topic in self.interceptors:

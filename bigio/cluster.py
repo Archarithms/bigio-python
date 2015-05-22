@@ -35,7 +35,7 @@ class Cluster:
         self.mc = MCDiscovery(self.me)
         self.mc.setup_networking()
 
-        self.listener_registry = ListenerRegistry(self.me)
+        self.listener_registry = ListenerRegistry(self.me, self.member_holder)
 
         self.gossiper = Gossiper(self.me, self.member_holder, self.listener_registry)
 
