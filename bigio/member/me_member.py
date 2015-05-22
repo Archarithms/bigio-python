@@ -3,69 +3,95 @@ __author__ = 'atrimble'
 
 from bigio.util import network_util
 import socket
+from threading import Timer
 from bigio.reactor import Reactor
-import bigio.listener_registry as listener_registry
 import bigio.codec.gossip_decoder as gossip_decoder
 import bigio.parameters as parameters
 from bigio.codec.envelope_decoder import EnvelopeDecoder
 from bigio.member.member import Member
 from bigio.util.configuration import *
+import bigio.util.utils as utils
 import threading
 import logging
 import socketserver
 
 logger = logging.getLogger(__name__)
 
-gossip_reactor = Reactor()
-
-
-def send(envelope):
-    #if not envelope.decoded:
-    #    envelope.message = EnvelopeDecoder.decode(envelope.payload)
-    #    envelope.decoded = True
-
-    listener_registry.send(envelope)
-
 
 class GossipHandler(socketserver.BaseRequestHandler):
+    def __init__(self, request, client_address, server, callback):
+        self.callback = callback
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
+
     def handle(self):
-        global gossip_reactor
         data = self.request.recv(1024)
         data = bytearray(data)[2:]
 
         if len(data) > 0:
             message = gossip_decoder.decode(data)
-            gossip_reactor.emit('gossip', message)
+            self.callback(message)
 
 
 class DataHandler(socketserver.BaseRequestHandler):
+    def __init__(self, request, client_address, server, reactor):
+        self.reactor = reactor
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
+
     def handle(self):
         data = self.request.recv(1024)
 
         if len(data) > 0:
             message = EnvelopeDecoder.decode(data)
             message.decoded = False
-            send(message)
+            self.callback(message)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     timeout = None
     daemon_threads = True
-    pass
+
+    def __init__(self, server_address, RequestHandlerClass, callback, bind_and_activate=True):
+        self.callback = callback
+        socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+
+    def finish_request(self, request, client_address):
+        self.RequestHandlerClass(request, client_address, self, self.callback)
 
 
 class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     allow_reuse_address = True
     timeout = None
     daemon_threads = True
-    pass
+
+    def __init__(self, server_address, RequestHandlerClass, callback, bind_and_activate=True):
+        self.callback = callback
+        socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+
+    def finish_request(self, request, client_address):
+        self.RequestHandlerClass(request, client_address, self, self.callback)
+
+
+class SendTimer(Timer):
+
+    def __init__(self, reactor, timeout, topic, message):
+        super().__init__(timeout, self.execute)
+        self.reactor = reactor
+        self.topic = topic
+        self.message = message
+
+    def execute(self):
+        self.reactor.emit(self.topic, self.message)
 
 
 class MeMember(Member):
 
     def __init__(self):
         super().__init__()
+        self.interceptors = dict()
+        self.data_reactor = Reactor()
+        self.gossip_reactor = Reactor()
+
         protocol = parameters.get_property(PROTOCOL_PROPERTY, DEFAULT_PROTOCOL)
         address = parameters.get_property(ADDRESS_PROPERTY, DEFAULT_ADDRESS)
         gossip_port = parameters.get_property(GOSSIP_PORT_PROPERTY)
@@ -78,12 +104,12 @@ class MeMember(Member):
 
         if protocol == 'tcp':
 
-            self.gossip_server = ThreadedTCPServer((address, gossip_port), GossipHandler)
+            self.gossip_server = ThreadedTCPServer((address, gossip_port), GossipHandler, self.gossip)
             self.gossip_server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             self.gossip_server.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.gossip_thread = threading.Thread(target=self.gossip_server.serve_forever)
 
-            self.data_server = ThreadedTCPServer((address, data_port), DataHandler)
+            self.data_server = ThreadedTCPServer((address, data_port), DataHandler, self.send)
             self.data_server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             self.data_server.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.data_thread = threading.Thread(target=self.data_server.serve_forever)
@@ -91,10 +117,10 @@ class MeMember(Member):
             logger.info('Starting TCP node on gossip port ' + str(gossip_port) + ' : data port ' + str(data_port))
 
         else:
-            self.gossip_server = ThreadedUDPServer((address, gossip_port), GossipHandler)
+            self.gossip_server = ThreadedUDPServer((address, gossip_port), GossipHandler, self.gossip)
             self.gossip_thread = threading.Thread(target=self.gossip_server.serve_forever)
 
-            self.data_server = ThreadedUDPServer((address, data_port), DataHandler)
+            self.data_server = ThreadedUDPServer((address, data_port), DataHandler, self.send)
             self.data_thread = threading.Thread(target=self.data_server.serve_forever)
 
             logger.info('Starting UDP node on gossip port ' + str(gossip_port) + ' : data port ' + str(data_port))
@@ -116,13 +142,31 @@ class MeMember(Member):
         self.gossip_server.shutdown()
         self.data_server.shutdown()
 
-    @staticmethod
-    def add_gossip_consumer(function):
-        global gossip_reactor
-        gossip_reactor.on('gossip', function)
+    def add_gossip_consumer(self, function):
+        self.gossip_reactor.on('gossip', function)
 
-    def get_protocol(self):
-        return self.protocol
+    def add_interceptor(self, topic, interceptor):
+        if topic not in self.interceptors:
+            self.interceptors[topic] = []
+
+        self.interceptors[topic].append(interceptor)
+
+    def send(self, envelope):
+        if envelope.topic in self.interceptors:
+            for interceptor in self.interceptors[envelope.topic]:
+                envelope = interceptor(envelope)
+
+        if envelope.execute_time > 0:
+            t = SendTimer(self, self.data_reactor, envelope.execute_time * 1000, envelope.topic, envelope.message)
+            t.start()
+        elif envelope.execute_time >= 0:
+            self.data_reactor.reactor.emit(envelope.topic, envelope.message)
+
+    def gossip(self, envelope):
+        self.gossip_reactor.emit('gossip', envelope)
+
+    def add_local_listener(self, topic, listener):
+        self.data_reactor.on(topic, listener)
 
     def __str__(self):
-        return 'Local member ' + str(self.ip) + ':' + str(self.gossip_port) + ':' + str(self.data_port)
+        return 'Local member ' + utils.get_key(self)

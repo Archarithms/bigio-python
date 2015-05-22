@@ -52,5 +52,8 @@ class RemoteMember(Member):
         except ConnectionAbortedError:
             pass
 
+    def send(self, message):
+        pass
+
     def __str__(self):
         return self.ip + ':' + str(self.gossip_port) + ':' + str(self.data_port)

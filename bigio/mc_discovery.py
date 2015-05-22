@@ -52,7 +52,7 @@ class MCDiscovery:
             data, address = self.sock.recvfrom(65507)
             data = data[2:]
             message = gossip_decoder.decode(data)
-            me_member.gossip_reactor.emit('gossip', message)
+            self.me.gossip_reactor.emit('gossip', message)
 
         self.sock.close()
 

@@ -37,15 +37,15 @@ def teardown():
 def test_interceptor():
     global me, registry
     registry.add_interceptor('test', intercept)
-    assert 'test' in registry.interceptors
-    assert intercept in registry.interceptors['test']
+    assert 'test' in me.interceptors
+    assert intercept in me.interceptors['test']
 
 
 def test_local_listener():
     global me, registry
     registry.add_local_listener('topic1', listener)
-    assert 'topic1' in registry.reactor.handlers
-    assert listener in registry.reactor.handlers['topic1']
+    assert 'topic1' in me.data_reactor.handlers
+    assert listener in me.data_reactor.handlers['topic1']
 
 
 def test_register():

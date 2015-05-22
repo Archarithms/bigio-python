@@ -32,6 +32,15 @@ class BigIO:
         logger.info('Goodbye')
         sys.exit(0)
 
+    def send(self, message, topic, partition=None, offset=None, java_class=None):
+        self.cluster.send(message, topic, partition, offset, java_class)
+
+    def add_listener(self, topic, listener, partition=None):
+        self.cluster.add_listener(topic, listener, partition)
+
+    def add_interceptor(self, topic, interceptor):
+        self.cluster.add_interceptor(topic, interceptor)
+
 
 if __name__ == "__main__":
     bigio = BigIO()
