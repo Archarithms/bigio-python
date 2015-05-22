@@ -94,7 +94,7 @@ class Cluster:
                 to_remove = []
                 for reg in self.listener_registry.get_all_registrations():
                     if reg.member == m:
-                        # member reporting on itself - take its listener list as cannon
+                        # member reporting on itself - take its listener list as canon
                         if reg.topic not in topics:
                             to_remove.append(reg)
 

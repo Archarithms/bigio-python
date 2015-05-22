@@ -19,19 +19,24 @@ class RemoteMember(Member):
 
     def initialize(self):
         if self.tcp:
-            self.gossip_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.gossip_client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            self.gossip_client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            self.gossip_client.connect((self.ip, self.gossip_port))
+            try:
+                self.gossip_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.gossip_client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                self.gossip_client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self.gossip_client.connect((self.ip, self.gossip_port))
+            except socket.error:
+                self.shutdown()
 
-            self.data_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.data_client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            self.data_client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            self.data_client.connect((self.ip, self.data_port))
+            try:
+                self.data_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.data_client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                self.data_client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self.data_client.connect((self.ip, self.data_port))
+            except socket.error:
+                self.shutdown()
 
         else:
-            self.gossip_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.data_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            logger.warn('UDP connections not yet implemented.')
 
         self.status = MemberStatus.Alive
 
