@@ -3,6 +3,9 @@ __author__ = 'atrimble'
 
 import msgpack
 from io import BytesIO
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def encode(message):
@@ -33,7 +36,11 @@ def encode(message):
     buf.write(msgpack.packb(int(message.gossip_port)))
     buf.write(msgpack.packb(int(message.data_port)))
     buf.write(msgpack.packb(int(message.milliseconds_since_midnight)))
-    buf.write(msgpack.packb(False))
+    if message.public_key is not None:
+        buf.write(msgpack.packb(True))
+        buf.write(msgpack.packb(message.public_key))
+    else:
+        buf.write(msgpack.packb(False))
     buf.write(msgpack.packb(message.tags))
     buf.write(msgpack.packb(members))
     buf.write(msgpack.packb(message.clock))

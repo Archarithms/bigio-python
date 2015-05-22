@@ -4,6 +4,9 @@ __author__ = 'atrimble'
 import msgpack
 from io import BytesIO
 from bigio.gossip_message import GossipMessage
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def decode(data):
@@ -26,13 +29,13 @@ def decode(data):
     message.gossip_port = int(unpacker.unpack())
     message.data_port = int(unpacker.unpack())
     message.milliseconds_since_midnight = int(unpacker.unpack())
-    has_public_key = bool(unpacker.unpack())
+    has_public_key = unpacker.unpack()
     if has_public_key:
         message.public_key = unpacker.unpack()
 
     tag_map = unpacker.unpack()
-    for key, value in tag_map:
-        message.tags[key] = value
+    for key, value in tag_map.items():
+        message.tags[key.decode('utf8')] = value.decode('utf8')
 
     member_array = unpacker.unpack()
     for member in member_array:
@@ -44,8 +47,10 @@ def decode(data):
         message.clock.append(clock)
 
     listener_map = unpacker.unpack()
-    for key, value in listener_map:
+    for key, value in listener_map.items():
+        k = key.decode('utf8')
+        message.listeners[k] = []
         for destination in value:
-            message.listeners[key].append(destination)
+            message.listeners[k].append(destination.decode('utf8'))
 
     return message
