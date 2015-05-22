@@ -7,61 +7,52 @@ from bigio.member.member_holder import MemberHolder
 from bigio.mc_discovery import MCDiscovery
 from bigio.member.me_member import MeMember
 from bigio.member.member_status import MemberStatus
-import bigio.listener_registry as listener_registry
+from bigio.listener_registry import ListenerRegistry
 from bigio.gossiper import Gossiper
 import bigio.parameters as parameters
 from bigio.util.configuration import *
+from bigio.util import utils
 from bigio.member.remote_member import RemoteMember
 import bigio.util.topic_utils as topic_utils
 
 logger = logging.getLogger(__name__)
 
-me = None
-
 
 class Cluster:
 
-    mc = None
-    gossiper = None
-    member_holder = None
-
-    shutting_down = False
-
     def __init__(self):
-        global me
+
+        self.shutting_down = False
 
         self.member_holder = MemberHolder()
 
-        me = MeMember()
-        me.status = MemberStatus.Alive
-        self.member_holder.update_member_status(me)
+        self.me = MeMember()
+        self.me.status = MemberStatus.Alive
+        self.member_holder.update_member_status(self.me)
 
-        me.add_gossip_consumer(self.handle_gossip_message)
+        self.me.add_gossip_consumer(self.handle_gossip_message)
 
-        self.mc = MCDiscovery(me)
+        self.mc = MCDiscovery(self.me)
         self.mc.setup_networking()
 
-        listener_registry.initialize(me)
+        self.listener_registry = ListenerRegistry(self.me)
 
-        self.gossiper = Gossiper(me, self.member_holder)
+        self.gossiper = Gossiper(self.me, self.member_holder, self.listener_registry)
 
     def shutdown(self):
         self.shutting_down = True
-        global me
-        me.shutdown()
+        self.me.shutdown()
         self.mc.shutdown()
         self.gossiper.shutdown()
-        for key, member in self.member_holder.get_all_members():
-            self.member_holder.get_member(key).shutdown()
+        for member in self.member_holder.get_all_members():
+            member.shutdown()
 
     def handle_gossip_message(self, message):
         if self.shutting_down:
             return
 
-        sender_key = str(message.ip) + ':' + str(message.gossip_port) + ':' + str(message.data_port)
+        sender_key = utils.get_key(ip=message.ip, gossip_port=message.gossip_port, data_port=message.data_port)
         update_tags = False
-
-        logger.info(message)
 
         for i in range(0, len(message.members)):
             key = message.members[i]
@@ -101,19 +92,19 @@ class Cluster:
                     topics = []
 
                 to_remove = []
-                for reg in listener_registry.get_all_registrations():
+                for reg in self.listener_registry.get_all_registrations():
                     if reg.member == m:
                         # member reporting on itself - take its listener list as cannon
                         if reg.topic not in topics:
                             to_remove.append(reg)
 
-                listener_registry.remove_registrations(to_remove)
+                self.listener_registry.remove_registrations(to_remove)
 
                 for topic_string in topics:
                     topic = topic_utils.get_topic(topic_string)
                     partition = topic_utils.get_partition(topic_string)
-                    if m not in listener_registry.get_registered_members(topic):
-                        listener_registry.register_member_for_topic(topic, partition, m)
+                    if m not in self.listener_registry.get_registered_members(topic):
+                        self.listener_registry.register_member_for_topic(topic, partition, m)
 
             if update_tags:
                 m = self.member_holder.get_member(sender_key)

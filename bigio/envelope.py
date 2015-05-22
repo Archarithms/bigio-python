@@ -2,13 +2,14 @@ __author__ = 'atrimble'
 
 
 class Envelope:
-    sender_key = None
-    execute_time = 0
-    milliseconds_since_midnight = 0
-    topic = None
-    partition = None
-    class_name = None
-    payload = None
-    key = None
-    encrypted = False
-    message = None
+    def __init__(self):
+        self.sender_key = None
+        self.execute_time = 0
+        self.milliseconds_since_midnight = 0
+        self.topic = None
+        self.partition = None
+        self.class_name = None
+        self.payload = None
+        self.key = None
+        self.encrypted = False
+        self.message = None

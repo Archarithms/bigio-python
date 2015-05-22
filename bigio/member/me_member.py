@@ -64,11 +64,6 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
 
 class MeMember(Member):
 
-    gossip_server = None
-    data_server = None
-    gossip_thread = None
-    data_thread = None
-
     def __init__(self):
         protocol = parameters.get_property(PROTOCOL_PROPERTY, DEFAULT_PROTOCOL)
         address = parameters.get_property(ADDRESS_PROPERTY, DEFAULT_ADDRESS)

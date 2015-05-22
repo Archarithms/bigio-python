@@ -5,9 +5,9 @@ import bigio.parameters as parameters
 import random
 from threading import Timer
 from bigio.util.configuration import *
+from bigio.util import utils
 from bigio.gossip_message import GossipMessage
 import bigio.util.time_util as time_util
-import bigio.listener_registry as listener_registry
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,12 +20,10 @@ should_shutdown = False
 
 class Gossiper:
 
-    me = None
-    member_holder = None
-
-    def __init__(self, me, member_holder):
+    def __init__(self, me, member_holder, listener_registry):
         self.me = me
         self.member_holder = member_holder
+        self.listener_registry = listener_registry
         if not should_shutdown:
             t = GossipThread(self.send_membership)
             t.start()
@@ -47,12 +45,13 @@ class Gossiper:
             message.tags = self.me.tags
 
             for m in self.member_holder.get_active_members():
+                message.members.append(utils.get_key(m))
                 if m == self.me:
                     self.me.sequence = self.me.sequence + 1
                 message.clock.append(m.sequence)
 
-            for r in listener_registry.get_all_registrations():
-                key = r.member.ip + ':' + r.member.gossip_port + ':' + r.member.data_port
+            for r in self.listener_registry.get_all_registrations():
+                key = utils.get_key(ip=r.member.ip, gossip_port=r.member.gossip_port, data_port=r.member.data_port)
                 if key not in message.listeners:
                     message.listeners[key] = []
                 message.listeners[key].append(r.topic)

@@ -13,20 +13,10 @@ cluster = None
 
 
 class Speaker:
-    def shutdown(self, signal=None, frame=None):
-        global cluster
-        logger.info('Closing connections')
-        cluster.shutdown()
-        logger.info('Goodbye')
-        sys.exit(0)
 
-
-    def initialize(self):
-        global cluster
-        global running
-
-        cluster = Cluster()
-        cluster.initialize()
+    def __init__(self):
+        self.cluster = Cluster()
+        self.cluster.initialize()
         logger.info('Welcome to BigIO')
 
         signal.signal(signal.SIGINT, self.shutdown)
@@ -36,6 +26,12 @@ class Speaker:
             input = sys.stdin.readline().rstrip()
             if input == 'quit':
                 self.shutdown()
+
+    def shutdown(self):
+        logger.info('Closing connections')
+        self.cluster.shutdown()
+        logger.info('Goodbye')
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -2,15 +2,17 @@ __author__ = 'atrimble'
 
 
 class GossipMessage:
-    ip = None
-    gossip_port = 0
-    data_port = 0
-    milliseconds_since_midnight = 0
-    public_key = None
-    tags = dict()
-    members = []
-    clock = []
-    listeners = dict()
+
+    def __init__(self):
+        self.ip = None
+        self.gossip_port = 0
+        self.data_port = 0
+        self.milliseconds_since_midnight = 0
+        self.public_key = None
+        self.tags = dict()
+        self.members = []
+        self.clock = []
+        self.listeners = dict()
 
     def __str__(self):
         ret = '{\n'

@@ -23,7 +23,8 @@ def test():
     mem1 = cluster1.member_holder.get_all_members()
     mem2 = cluster2.member_holder.get_all_members()
 
-    assert len(mem1) == len(mem2)
-
-    cluster1.shutdown()
-    cluster2.shutdown()
+    try:
+        assert len(mem1) == len(mem2) == 2
+    finally:
+        cluster1.shutdown()
+        cluster2.shutdown()

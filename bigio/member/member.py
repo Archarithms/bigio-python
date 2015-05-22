@@ -4,10 +4,11 @@ from bigio.member.member_status import MemberStatus
 
 
 class Member:
-    ip = None
-    status = MemberStatus.Unknown
-    sequence = 0
-    tags = dict()
-    data_port = 0
-    gossip_port = 0
-    public_key = None
+    def __init__(self):
+        self.ip = None
+        self.status = MemberStatus.Unknown
+        self.sequence = 0
+        self.tags = dict()
+        self.data_port = 0
+        self.gossip_port = 0
+        self.public_key = None

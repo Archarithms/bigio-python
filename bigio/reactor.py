@@ -9,10 +9,9 @@ logger = logging.getLogger(__name__)
 
 class NotifierThread(Thread):
 
-    message = None
-
     def __init__(self, handler, message):
         super().__init__()
+        self.message = None
         self.handler = handler
         self.message = message
 

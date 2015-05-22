@@ -2,6 +2,7 @@ __author__ = 'atrimble'
 
 
 import socket
+import struct
 import threading
 import logging
 import bigio.parameters as parameters
@@ -17,35 +18,29 @@ logger = logging.getLogger(__name__)
 
 class MCDiscovery:
 
-    should_shutdown = False
-    client = None
-    address = None
-    me = None
-
-    group = ''
-    port = 0
-
-    listen_thread = None
-
     def __init__(self, me):
+        self.should_shutdown = False
+        self.sock = None
         self.group = parameters.get_property(MULTICAST_GROUP_PROPERTY, DEFAULT_MULTICAST_GROUP)
         self.port = int(parameters.get_property(MULTICAST_PORT_PROPERTY, DEFAULT_MULTICAST_PORT))
         self.address = parameters.get_property(ADDRESS_PROPERTY, DEFAULT_ADDRESS)
         self.me = me
+        self.listen_thread = None
 
     def setup_networking(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(('', self.port))
+        self.sock.setsockopt(
+            socket.IPPROTO_IP,
+            socket.IP_ADD_MEMBERSHIP,
+            struct.pack('4sL',
+                        socket.inet_aton(self.group),
+                        socket.INADDR_ANY))
 
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.client.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
-        self.client.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-        self.client.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(socket.gethostbyname(self.address)))
-        self.client.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.group) + socket.inet_aton(socket.gethostbyname(self.address)))
-        self.client.bind((self.address, self.port))
-
-        listen_thread = threading.Thread(target=self.listen)
-        listen_thread.daemon = True
-        listen_thread.start()
+        self.listen_thread = threading.Thread(target=self.listen)
+        self.listen_thread.daemon = True
+        self.listen_thread.start()
 
         self.announce()
 
@@ -54,12 +49,12 @@ class MCDiscovery:
 
     def listen(self):
         while not self.should_shutdown:
-            data = self.client.recv(65507)
-            data = bytearray(data)[2:]
+            data, address = self.sock.recvfrom(65507)
+            data = data[2:]
             message = gossip_decoder.decode(data)
             me_member.gossip_reactor.emit('gossip', message)
 
-        self.client.close()
+        self.sock.close()
 
     def announce(self):
         logger.info("Announcing")
@@ -77,7 +72,10 @@ class MCDiscovery:
         message.public_key = self.me.public_key
 
         data = gossip_encoder.encode(message)
-        server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        server.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
+
+        server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        ttl = struct.pack('b', 1)
+        server .setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.sendto(data, (self.group, self.port))
         server.close()

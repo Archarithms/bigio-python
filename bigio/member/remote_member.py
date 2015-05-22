@@ -11,12 +11,11 @@ logger = logging.getLogger(__name__)
 
 class RemoteMember(Member):
 
-    tcp = True
-    gossip_client = None
-    data_client = None
-
     def __init__(self, use_tcp=True):
+        super().__init__()
         self.tcp = use_tcp
+        self.gossip_client = None
+        self.data_client = None
 
     def initialize(self):
         if self.tcp:
