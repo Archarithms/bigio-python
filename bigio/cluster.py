@@ -3,7 +3,7 @@ __author__ = 'atrimble'
 
 import logging
 
-import bigio.codec.generic_encoder as generic_encoder
+import bigio.codec.generic_codec as generic_encoder
 from bigio.member.member_holder import MemberHolder
 from bigio.mc_discovery import MCDiscovery
 from bigio.member.me_member import MeMember

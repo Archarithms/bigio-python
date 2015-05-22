@@ -5,9 +5,9 @@ from bigio.util import network_util
 import socket
 from threading import Timer
 from bigio.reactor import Reactor
-import bigio.codec.gossip_decoder as gossip_decoder
+import bigio.codec.gossip_codec as gossip_decoder
 import bigio.parameters as parameters
-from bigio.codec.envelope_decoder import EnvelopeDecoder
+from bigio.codec.envelope_codec import EnvelopeDecoder
 from bigio.member.member import Member
 from bigio.util.configuration import *
 import bigio.util.utils as utils

@@ -2,7 +2,7 @@ __author__ = 'atrimble'
 
 from bigio.member.member import Member
 from bigio.member.member_status import MemberStatus
-from bigio.codec import gossip_encoder
+from bigio.codec import gossip_codec
 import logging
 import socket
 
@@ -47,7 +47,7 @@ class RemoteMember(Member):
 
     def gossip(self, message):
         try:
-            data = gossip_encoder.encode(message)
+            data = gossip_codec.encode(message)
             self.gossip_client.sendall(data)
         except ConnectionAbortedError:
             pass

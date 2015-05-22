@@ -2,7 +2,7 @@ __author__ = 'atrimble'
 
 import logging
 from bigio.gossip_message import GossipMessage
-from bigio.codec import gossip_decoder, gossip_encoder
+from bigio.codec import gossip_codec
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +28,9 @@ def test():
     message.listeners['me'] = []
     message.listeners['me'].append('topic1')
 
-    bytes = gossip_encoder.encode(message)
+    bytes = gossip_codec.encode(message)
     # Be sure and strip off the two byte length field
-    value = gossip_decoder.decode(bytes[2:])
+    value = gossip_codec.decode(bytes[2:])
 
     assert value.ip == message.ip
     assert value.gossip_port == message.gossip_port

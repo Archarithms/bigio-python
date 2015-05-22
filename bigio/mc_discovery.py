@@ -9,9 +9,7 @@ import bigio.parameters as parameters
 from bigio.util.configuration import *
 from bigio.gossip_message import GossipMessage
 import bigio.util.time_util as time_util
-import bigio.codec.gossip_encoder as gossip_encoder
-import bigio.codec.gossip_decoder as gossip_decoder
-from bigio.member import me_member
+import bigio.codec.gossip_codec as gossip_codec
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class MCDiscovery:
         while not self.should_shutdown:
             data, address = self.sock.recvfrom(65507)
             data = data[2:]
-            message = gossip_decoder.decode(data)
+            message = gossip_codec.decode(data)
             self.me.gossip_reactor.emit('gossip', message)
 
         self.sock.close()
@@ -71,7 +69,7 @@ class MCDiscovery:
         message.clock.append(self.me.sequence)
         message.public_key = self.me.public_key
 
-        data = gossip_encoder.encode(message)
+        data = gossip_codec.encode(message)
 
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         ttl = struct.pack('b', 1)
