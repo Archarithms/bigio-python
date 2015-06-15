@@ -1,11 +1,9 @@
 __author__ = 'atrimble'
 
 
-class EnvelopeDecoder:
+def encode(envelope):
+    print(envelope)
 
-    def __init__(self):
-        return
 
-    def decode(self, message):
-        print(message)
-        pass
+def decode(data):
+    print(data)

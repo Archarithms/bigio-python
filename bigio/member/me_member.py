@@ -7,7 +7,7 @@ from threading import Timer
 from bigio.reactor import Reactor
 import bigio.codec.gossip_codec as gossip_decoder
 import bigio.parameters as parameters
-from bigio.codec.envelope_codec import EnvelopeDecoder
+import bigio.codec.envelope_codec as envelope_codec
 from bigio.member.member import Member
 from bigio.util.configuration import *
 import bigio.util.utils as utils
@@ -41,7 +41,7 @@ class DataHandler(socketserver.BaseRequestHandler):
         data = self.request.recv(1024)
 
         if len(data) > 0:
-            message = EnvelopeDecoder.decode(data)
+            message = envelope_codec.decode(data)
             message.decoded = False
             self.callback(message)
 
