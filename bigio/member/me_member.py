@@ -38,11 +38,15 @@ class DataHandler(socketserver.BaseRequestHandler):
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def handle(self):
-        data = self.request.recv(1024)
+        try:
+            data = self.request.recv(1024)
 
-        if len(data) > 0:
-            message = envelope_codec.decode(data)
-            self.callback(message)
+            if len(data) > 0:
+                message = envelope_codec.decode(data)
+                self.callback(message)
+
+        except ConnectionResetError:
+            pass
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

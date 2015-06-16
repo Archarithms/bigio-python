@@ -50,11 +50,11 @@ class Gossiper:
                     self.me.sequence = self.me.sequence + 1
                 message.clock.append(m.sequence)
 
-            for r in self.listener_registry.get_all_registrations():
-                key = utils.get_key(ip=r.member.ip, gossip_port=r.member.gossip_port, data_port=r.member.data_port)
-                if key not in message.listeners:
-                    message.listeners[key] = []
-                message.listeners[key].append(r.topic)
+            for topic, member_list in self.listener_registry.get_all_registrations().items():
+                for key in member_list:
+                    if key not in message.listeners:
+                        message.listeners[key] = []
+                    message.listeners[key].append(topic)
 
             member.gossip(message)
 

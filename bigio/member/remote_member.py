@@ -51,6 +51,8 @@ class RemoteMember(Member):
             self.gossip_client.sendall(data)
         except ConnectionAbortedError:
             pass
+        except OSError:
+            pass
 
     def send(self, message):
         pass

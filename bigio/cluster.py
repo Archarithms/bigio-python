@@ -141,7 +141,7 @@ class Cluster:
                     topic = topic_utils.get_topic(topic_string)
                     partition = topic_utils.get_partition(topic_string)
                     if m not in self.listener_registry.get_registered_members(topic):
-                        self.listener_registry.register_member_for_topic(topic, partition, m)
+                        self.listener_registry.register_member_for_topic(topic, m)
 
             if update_tags:
                 m = self.member_holder.get_member(sender_key)
