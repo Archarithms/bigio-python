@@ -3,6 +3,7 @@ __author__ = 'atrimble'
 import logging
 import signal
 import sys
+import bigio.cli as cli
 from bigio.cluster import Cluster
 
 logging.basicConfig(format='%(asctime)s %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
@@ -21,10 +22,7 @@ class BigIO:
         signal.signal(signal.SIGINT, self.shutdown)
         signal.signal(signal.SIGTERM, self.shutdown)
 
-        while True:
-            input = sys.stdin.readline().rstrip()
-            if input == 'quit':
-                self.shutdown()
+        cli.run(self)
 
     def shutdown(self, signal=None, frame=None):
         logger.info('Closing connections')
