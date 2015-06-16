@@ -131,8 +131,8 @@ class Cluster:
                 else:
                     topics = []
 
-                for topic, member_list in self.listener_registry.get_all_registrations().items():
-                    if key in member_list:
+                for key, topic_list in self.listener_registry.get_all_registrations().items():
+                    if topic in topic_list:
                         # member reporting on itself - take its listener list as canon
                         if topic not in topics:
                             self.listener_registry.remove_registration(m, topic)

@@ -50,8 +50,8 @@ class Gossiper:
                     self.me.sequence = self.me.sequence + 1
                 message.clock.append(m.sequence)
 
-            for topic, member_list in self.listener_registry.get_all_registrations().items():
-                for key in member_list:
+            for key, topic_list in self.listener_registry.get_all_registrations().items():
+                for topic in topic_list:
                     if key not in message.listeners:
                         message.listeners[key] = []
                     message.listeners[key].append(topic)
