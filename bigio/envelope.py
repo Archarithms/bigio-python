@@ -13,4 +13,3 @@ class Envelope:
         self.key = None
         self.encrypted = False
         self.message = None
-        self.decoded = False

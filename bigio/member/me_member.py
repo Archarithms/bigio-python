@@ -42,7 +42,6 @@ class DataHandler(socketserver.BaseRequestHandler):
 
         if len(data) > 0:
             message = envelope_codec.decode(data)
-            message.decoded = False
             self.callback(message)
 
 
