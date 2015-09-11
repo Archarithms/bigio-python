@@ -46,4 +46,3 @@ def decode(data, message_type):
                 logger.error('Ran out of data on "' + str(tup[0]) + '"')
 
     return message
-

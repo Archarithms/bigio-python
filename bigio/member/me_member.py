@@ -31,15 +31,18 @@ class GossipHandler(socketserver.BaseRequestHandler):
             message = gossip_decoder.decode(data)
             self.callback(message)
 
+        self.request.sendall(bytes('\n', 'UTF-8'))
+
 
 class DataHandler(socketserver.BaseRequestHandler):
-    def __init__(self, request, client_address, server, reactor):
-        self.reactor = reactor
+    def __init__(self, request, client_address, server, callback):
+        self.callback = callback
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def handle(self):
         try:
             data = self.request.recv(1024)
+            data = bytearray(data)[2:]
 
             if len(data) > 0:
                 message = envelope_codec.decode(data)
@@ -163,7 +166,7 @@ class MeMember(Member):
             t = SendTimer(self, self.data_reactor, envelope.execute_time * 1000, envelope.topic, envelope.message)
             t.start()
         elif envelope.execute_time >= 0:
-            self.data_reactor.reactor.emit(envelope.topic, envelope.message)
+            self.data_reactor.emit(envelope.topic, envelope.message)
 
     def gossip(self, envelope):
         self.gossip_reactor.emit('gossip', envelope)

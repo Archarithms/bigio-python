@@ -8,7 +8,7 @@ class Envelope:
         self.milliseconds_since_midnight = 0
         self.topic = None
         self.partition = None
-        self.class_name = None
+        self.type = None
         self.payload = None
         self.key = None
         self.encrypted = False

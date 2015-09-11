@@ -11,6 +11,7 @@ import importlib
 
 logger = logging.getLogger(__name__)
 
+
 def encode(envelope):
     buf = BytesIO()
 
@@ -34,7 +35,7 @@ def encode(envelope):
     buf.write(msgpack.packb(int(envelope.milliseconds_since_midnight)))
     buf.write(msgpack.packb(str(envelope.topic)))
     buf.write(msgpack.packb(str(envelope.partition)))
-    buf.write(msgpack.packb(str(envelope.class_name)))
+    buf.write(msgpack.packb(str(envelope.type)))
 
     m = generic_codec.encode(envelope.message)
     buf.write(msgpack.packb(m))
@@ -59,7 +60,7 @@ def decode(data):
 
     envelope = Envelope()
     envelope.sender_key = utils.get_key(ip=ip, gossip_port=int(unpacker.unpack()), data_port=int(unpacker.unpack()))
-    envelope.encrypted = bool(unpacker.unpack())
+    envelope.encrypted = unpacker.unpack()
     if envelope.encrypted:
         envelope.key = unpacker.unpack().decode('utf8')
     else:
@@ -68,12 +69,17 @@ def decode(data):
     envelope.milliseconds_since_midnight = int(unpacker.unpack())
     envelope.topic = unpacker.unpack().decode('utf8')
     envelope.partition = unpacker.unpack().decode('utf8')
-    envelope.class_name = unpacker.unpack().decode('utf8')
+    envelope.type = unpacker.unpack().decode('utf8')
     envelope.payload = unpacker.unpack()
 
-    spl = envelope.class_name.split('.')
-    cl = class_for_name('.'.join(spl[0:-1]), spl[-1])
-    envelope.message = generic_codec.decode(envelope.payload, cl)
+    spl = envelope.type.split('.')
+    module = '.'.join(spl[0:-1])
+    name = spl[-1]
+    try:
+        cl = class_for_name(module, name)
+        envelope.message = generic_codec.decode(envelope.payload, cl)
+    except ImportError:
+        logger.warn('Could not locate message type "' + module + '.' + name + '"')
 
     return envelope
 

@@ -1,6 +1,7 @@
 __author__ = 'atrimble'
 
 import logging
+import threading
 import signal
 import sys
 import bigio.cli as cli
@@ -22,16 +23,19 @@ class BigIO:
         signal.signal(signal.SIGINT, self.shutdown)
         signal.signal(signal.SIGTERM, self.shutdown)
 
-        cli.run(self)
+        cli_thread = threading.Thread(target=cli.run, args=(self,))
+        cli_thread.daemon = True
+        cli_thread.start()
 
     def shutdown(self, signal=None, frame=None):
         logger.info('Closing connections')
+        cli.stop()
         self.cluster.shutdown()
         logger.info('Goodbye')
-        sys.exit(0)
+        #sys.exit(0)
 
-    def send(self, message, topic, partition=None, offset=None, java_class=None):
-        self.cluster.send(message, topic, partition, offset, java_class)
+    def send(self, message, topic, partition=None, offset=None):
+        self.cluster.send(message, topic, partition, offset)
 
     def add_listener(self, topic, listener, partition=None):
         self.cluster.add_listener(topic, listener, partition)

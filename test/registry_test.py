@@ -6,7 +6,6 @@ from bigio.member.me_member import MeMember
 from bigio.member.member_holder import MemberHolder
 import bigio.util.utils as utils
 
-
 logger = logging.getLogger(__name__)
 
 me = None

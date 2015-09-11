@@ -33,7 +33,7 @@ def make_envelope_assertions(envelope, truth):
     assert envelope.milliseconds_since_midnight == truth.milliseconds_since_midnight
     assert envelope.topic == truth.topic
     assert envelope.partition == truth.partition
-    assert envelope.class_name == truth.class_name
+    assert envelope.type == truth.type
     assert envelope.key == truth.key
     assert envelope.encrypted == truth.encrypted
 
@@ -54,7 +54,7 @@ def make_message_assertions(message, truth):
 
 def test_class():
     envelope.message = simple_class_message.SimpleMessage()
-    envelope.class_name = 'test.simple_class_message.SimpleMessage'
+    envelope.type = 'test.simple_class_message.SimpleMessage'
 
     bytes = envelope_codec.encode(envelope)
     message = envelope_codec.decode(bytes[2:])
@@ -65,7 +65,7 @@ def test_class():
 
 def test_module():
     envelope.message = simple_module_message
-    envelope.class_name = 'test.simple_module_message'
+    envelope.type = 'test.simple_module_message'
 
     bytes = envelope_codec.encode(envelope)
     message = envelope_codec.decode(bytes[2:])

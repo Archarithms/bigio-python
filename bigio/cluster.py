@@ -17,6 +17,7 @@ from bigio.util import utils
 from bigio.util import time_util as time_util
 from bigio.member.remote_member import RemoteMember
 import bigio.util.topic_utils as topic_utils
+from types import ModuleType
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class Cluster:
     def add_interceptor(self, topic, interceptor):
         self.listener_registry.add_interceptor(topic, interceptor)
 
-    def send(self, message, topic, partition=None, offset=None, java_class=None):
+    def send(self, message, topic, partition=None, offset=None):
         envelope = Envelope()
         envelope.decoded = False
         if offset is not None:
@@ -71,15 +72,13 @@ class Cluster:
             envelope.partition = partition
         else:
             envelope.partition = ''
-        if java_class is not None:
-            envelope.class_name = java_class
-        else:
-            envelope.class_name = ''
+
+        envelope.type = type(message).__module__ + '.' + message.__class__.__name__
 
         members = self.listener_registry.get_registered_members(topic)
         for member in members:
             if self.me == member:
-                envelope.payload = message
+                envelope.message = message
                 envelope.decoded = True
             else:
                 envelope.payload = generic_encoder.encode(message)
@@ -132,10 +131,9 @@ class Cluster:
                     topics = []
 
                 for key, topic_list in self.listener_registry.get_all_registrations().items():
-                    if topic in topic_list:
+                    if key == sender_key:
                         # member reporting on itself - take its listener list as canon
-                        if topic not in topics:
-                            self.listener_registry.remove_registration(m, topic)
+                        self.listener_registry.get_all_registrations()[key] = topics
 
                 for topic_string in topics:
                     topic = topic_utils.get_topic(topic_string)

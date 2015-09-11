@@ -6,8 +6,17 @@ import sys
 logger = logging.getLogger(__name__)
 
 
+running = True
+
+def stop():
+    global running
+    running = False
+    print(running)
+
+
 def run(bigio):
-    while True:
+    global running
+    while running:
         print('bigio > ', end='', flush=True)
         cmd = sys.stdin.readline().rstrip()
         if cmd == 'quit':
