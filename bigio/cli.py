@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 running = True
 
+
 def stop():
     global running
     running = False
-    print(running)
 
 
 def run(bigio):

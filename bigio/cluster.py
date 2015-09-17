@@ -17,7 +17,7 @@ from bigio.util import utils
 from bigio.util import time_util as time_util
 from bigio.member.remote_member import RemoteMember
 import bigio.util.topic_utils as topic_utils
-from types import ModuleType
+import types
 
 logger = logging.getLogger(__name__)
 

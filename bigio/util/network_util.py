@@ -28,8 +28,6 @@ def get_free_port():
 
 
 def get_ip():
-    print(netifaces.interfaces())
-    print(socket.gethostbyname(socket.gethostname()))
     global ip
 
     if ip:

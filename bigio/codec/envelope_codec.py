@@ -36,9 +36,7 @@ def encode(envelope):
     buf.write(msgpack.packb(str(envelope.topic)))
     buf.write(msgpack.packb(str(envelope.partition)))
     buf.write(msgpack.packb(str(envelope.type)))
-
-    m = generic_codec.encode(envelope.message)
-    buf.write(msgpack.packb(m))
+    buf.write(msgpack.packb(envelope.payload))
 
     length = len(buf.getvalue())
     ret = BytesIO()
@@ -49,8 +47,6 @@ def encode(envelope):
 
 
 def decode(data):
-    print(data)
-
     buf = BytesIO()
     buf.write(data)
     buf.seek(0)
